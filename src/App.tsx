@@ -9,6 +9,14 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Company from "./pages/Company";
+import Events from "./pages/Events";
+import Attendees from "./pages/Attendees";
+import CheckIn from "./pages/CheckIn";
+import Seating from "./pages/Seating";
+import Gallery from "./pages/Gallery";
+import Voting from "./pages/Voting";
+import PublicRegister from "./pages/PublicRegister";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,10 +31,60 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/register/:eventId" element={<PublicRegister />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DashboardLayout>
                   <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/company" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Company />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/events" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Events />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/attendees" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Attendees />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/checkin" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <CheckIn />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/seating" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Seating />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/gallery" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Gallery />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/voting" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Voting />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
