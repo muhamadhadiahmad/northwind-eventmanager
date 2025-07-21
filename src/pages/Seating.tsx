@@ -45,23 +45,23 @@ const DraggableTable = ({ table, attendees }: { table: EventTable; attendees: At
   });
 
   const assignedAttendees = attendees.filter(a => a.table_assignment === table.id);
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    opacity: isDragging ? 0.5 : 1,
-  } : undefined;
+  
+  const combinedStyle = {
+    left: table.position_x,
+    top: table.position_y,
+    ...(transform ? {
+      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      opacity: isDragging ? 0.5 : 1,
+    } : {})
+  };
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={combinedStyle}
       {...listeners}
       {...attributes}
       className={`absolute cursor-move rounded-lg p-4 min-w-32 text-center shadow-lg border-2 border-white/20 ${tableTypeColors[table.table_type]}`}
-      style={{
-        left: table.position_x,
-        top: table.position_y,
-        ...style
-      }}
     >
       <div className="font-bold text-sm">Table {table.table_number}</div>
       <div className="text-xs opacity-90">{table.table_type}</div>
@@ -96,9 +96,13 @@ const Seating = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingTable, setEditingTable] = useState<EventTable | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    table_number: number;
+    table_type: 'VVIP' | 'VIP' | 'Regular' | 'Staff';
+    capacity: number;
+  }>({
     table_number: 1,
-    table_type: 'Regular' as const,
+    table_type: 'Regular',
     capacity: 8
   });
   const { toast } = useToast();
@@ -232,7 +236,7 @@ const Seating = () => {
   const resetForm = () => {
     setFormData({
       table_number: Math.max(...tables.map(t => t.table_number), 0) + 1,
-      table_type: 'Regular' as const,
+      table_type: 'Regular',
       capacity: 8
     });
   };
