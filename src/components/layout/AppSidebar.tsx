@@ -47,21 +47,41 @@ export function AppSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? "bg-primary/10 text-primary font-medium border-r-2 border-primary" : "hover:bg-muted/50";
+    isActive 
+      ? "bg-gradient-primary text-primary-foreground font-semibold shadow-md border-r-4 border-accent" 
+      : "hover:bg-primary/5 hover:text-primary hover:shadow-sm transition-all duration-200";
 
   return (
-    <Sidebar>
-      <SidebarContent>
+    <Sidebar className="border-r border-border/50 bg-gradient-subtle">
+      <SidebarContent className="p-4">
+        <div className="mb-6 p-4 glass rounded-xl border border-border/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">E</span>
+            </div>
+            <div>
+              <h2 className="font-bold text-sm bg-gradient-primary bg-clip-text text-transparent">
+                Event Manager
+              </h2>
+              <p className="text-xs text-muted-foreground">Professional Edition</p>
+            </div>
+          </div>
+        </div>
+
         <SidebarGroup>
-          <SidebarGroupLabel>Event Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+            Event Management
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
+                      <div className="flex items-center gap-3 w-full py-2">
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
+                      </div>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -70,16 +90,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+        <SidebarGroup className="mt-8">
+          <SidebarGroupLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+            Administration
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
+                      <div className="flex items-center gap-3 w-full py-2">
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
+                      </div>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

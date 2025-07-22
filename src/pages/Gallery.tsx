@@ -265,30 +265,37 @@ const Gallery = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Photo Gallery</h1>
-          <p className="text-muted-foreground">
+    <div className="space-y-8">
+      <div className="flex justify-between items-start">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Photo Gallery
+          </h1>
+          <p className="text-muted-foreground text-lg">
             Manage event photos and control slideshow display
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {!slideshow.active ? (
-            <Button onClick={startSlideshow} disabled={approvedPhotos.length === 0}>
-              <Play className="mr-2 h-4 w-4" />
+            <Button 
+              onClick={startSlideshow} 
+              disabled={approvedPhotos.length === 0}
+              variant="gradient"
+              size="lg"
+            >
+              <Play className="mr-2 h-5 w-5" />
               Start Slideshow
             </Button>
           ) : (
-            <Button onClick={stopSlideshow}>
-              <Pause className="mr-2 h-4 w-4" />
+            <Button onClick={stopSlideshow} variant="destructive" size="lg">
+              <Pause className="mr-2 h-5 w-5" />
               Stop Slideshow
             </Button>
           )}
           <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
             <DialogTrigger asChild>
-              <Button>
-                <Upload className="mr-2 h-4 w-4" />
+              <Button variant="secondary" size="lg">
+                <Upload className="mr-2 h-5 w-5" />
                 Upload Photo
               </Button>
             </DialogTrigger>
@@ -329,17 +336,17 @@ const Gallery = () => {
       </div>
 
       {/* Event Selection */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4 items-center">
-            <Label htmlFor="event">Select Event:</Label>
+      <Card className="border-primary/20 shadow-glow">
+        <CardContent className="pt-8">
+          <div className="flex gap-6 items-center">
+            <Label htmlFor="event" className="text-lg font-semibold">Select Event:</Label>
             <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-80 h-12 border-primary/30 shadow-sm">
                 <SelectValue placeholder="Choose an event" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="glass backdrop-blur-xl">
                 {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
+                  <SelectItem key={event.id} value={event.id} className="hover:bg-primary/10">
                     {event.name}
                   </SelectItem>
                 ))}
@@ -351,33 +358,37 @@ const Gallery = () => {
 
       {/* Slideshow Display */}
       {slideshow.active && currentPhoto && (
-        <Card>
+        <Card className="border-primary/30 shadow-xl bg-gradient-card">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
+              <span className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-primary rounded-lg">
+                  <Camera className="h-6 w-6 text-primary-foreground" />
+                </div>
                 Live Slideshow
               </span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => navigateSlide('prev')}>
-                  <SkipBack className="h-4 w-4" />
+              <div className="flex gap-3">
+                <Button size="sm" variant="glass" onClick={() => navigateSlide('prev')}>
+                  <SkipBack className="h-5 w-5" />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => navigateSlide('next')}>
-                  <SkipForward className="h-4 w-4" />
+                <Button size="sm" variant="glass" onClick={() => navigateSlide('next')}>
+                  <SkipForward className="h-5 w-5" />
                 </Button>
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+            <div className="relative aspect-video bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl overflow-hidden shadow-inner border border-primary/10">
               <img
                 src={currentPhoto.photo_url}
                 alt="Gallery slideshow"
                 className="w-full h-full object-contain"
               />
-              <div className="absolute bottom-4 left-4 text-white bg-black/50 px-3 py-1 rounded">
-                {currentPhoto.attendee_name && `By ${currentPhoto.attendee_name} • `}
-                {slideshow.currentIndex + 1} of {approvedPhotos.length}
+              <div className="absolute bottom-6 left-6 glass px-4 py-2 rounded-xl backdrop-blur-md">
+                <div className="text-foreground font-medium">
+                  {currentPhoto.attendee_name && `By ${currentPhoto.attendee_name} • `}
+                  {slideshow.currentIndex + 1} of {approvedPhotos.length}
+                </div>
               </div>
             </div>
           </CardContent>
