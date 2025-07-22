@@ -38,7 +38,7 @@ const Attendees = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<string>('');
+  const [selectedEvent, setSelectedEvent] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null);
   const [formData, setFormData] = useState({
@@ -211,7 +211,7 @@ const Attendees = () => {
 
   const exportToCSV = () => {
     const filteredAttendees = attendees.filter(attendee =>
-      (selectedEvent === '' || attendee.event_id === selectedEvent) &&
+      (selectedEvent === 'all' || attendee.event_id === selectedEvent) &&
       (searchTerm === '' || 
         attendee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         attendee.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -243,7 +243,7 @@ const Attendees = () => {
   };
 
   const filteredAttendees = attendees.filter(attendee =>
-    (selectedEvent === '' || attendee.event_id === selectedEvent) &&
+    (selectedEvent === 'all' || attendee.event_id === selectedEvent) &&
     (searchTerm === '' || 
       attendee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       attendee.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -390,7 +390,7 @@ const Attendees = () => {
                 <SelectValue placeholder="All events" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All events</SelectItem>
+                <SelectItem value="all">All events</SelectItem>
                 {events.map((event) => (
                   <SelectItem key={event.id} value={event.id}>
                     {event.name}
