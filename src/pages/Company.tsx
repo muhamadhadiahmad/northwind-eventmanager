@@ -24,7 +24,7 @@ interface CompanyUser {
   id: string;
   email: string;
   full_name: string;
-  role: 'admin' | 'manager' | 'staff';
+  role: 'admin' | 'manager' | 'staff' | 'superadmin';
   created_at: string;
 }
 
@@ -33,17 +33,17 @@ const Company = () => {
   const [users, setUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showUserDialog, setShowUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<CompanyUser | null>(null);
   const [companyFormData, setCompanyFormData] = useState({
     name: '',
     email: '',
     phone: ''
   });
-  const [inviteFormData, setInviteFormData] = useState({
+  const [userFormData, setUserFormData] = useState({
     email: '',
     full_name: '',
-    role: 'staff' as 'admin' | 'manager' | 'staff'
+    role: 'staff' as 'admin' | 'manager' | 'staff' | 'superadmin'
   });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -150,19 +150,16 @@ const Company = () => {
     }
   };
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company) return;
 
     try {
-      // In a real app, you would send an invitation email
-      // For now, we'll create a placeholder user that needs to be activated
-      
       // Check if user already exists
       const { data: existingUser } = await supabase
         .from('profiles')
         .select('id')
-        .eq('email', inviteFormData.email)
+        .eq('email', userFormData.email)
         .single();
 
       if (existingUser) {
@@ -174,9 +171,9 @@ const Company = () => {
         return;
       }
 
-      // Create auth user first (simplified - in production you'd send an invite)
+      // Create auth user first
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: inviteFormData.email,
+        email: userFormData.email,
         password: Math.random().toString(36).slice(-8), // Temporary password
         email_confirm: true
       });
@@ -187,32 +184,81 @@ const Company = () => {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: inviteFormData.full_name,
+          full_name: userFormData.full_name,
           company_id: company.id,
-          role: inviteFormData.role
+          role: userFormData.role
         })
         .eq('id', authData.user.id);
 
       if (profileError) throw profileError;
 
       toast({
-        title: "User invited",
-        description: `${inviteFormData.full_name} has been added to your company.`,
+        title: "User created",
+        description: `${userFormData.full_name} has been added to your company.`,
       });
 
-      setShowInviteDialog(false);
-      setInviteFormData({ email: '', full_name: '', role: 'staff' });
+      setShowUserDialog(false);
+      setUserFormData({ email: '', full_name: '', role: 'staff' });
       fetchCompanyAndUsers();
     } catch (error: any) {
       toast({
-        title: "Invitation failed",
+        title: "Create user failed",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  const handleUpdateUserRole = async (userId: string, newRole: 'admin' | 'manager' | 'staff') => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: userFormData.full_name,
+          role: userFormData.role
+        })
+        .eq('id', editingUser.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "User updated",
+        description: "User has been updated successfully.",
+      });
+
+      setShowUserDialog(false);
+      setEditingUser(null);
+      setUserFormData({ email: '', full_name: '', role: 'staff' });
+      fetchCompanyAndUsers();
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openCreateUserDialog = () => {
+    setEditingUser(null);
+    setUserFormData({ email: '', full_name: '', role: 'staff' });
+    setShowUserDialog(true);
+  };
+
+  const openEditUserDialog = (user: CompanyUser) => {
+    setEditingUser(user);
+    setUserFormData({
+      email: user.email,
+      full_name: user.full_name,
+      role: user.role
+    });
+    setShowUserDialog(true);
+  };
+
+  const handleUpdateUserRole = async (userId: string, newRole: 'admin' | 'manager' | 'staff' | 'superadmin') => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -236,21 +282,18 @@ const Company = () => {
     }
   };
 
-  const handleRemoveUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to remove this user from the company?')) return;
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
-      // Remove user from company (set company_id to null)
-      const { error } = await supabase
-        .from('profiles')
-        .update({ company_id: null, role: 'staff' })
-        .eq('id', userId);
+      // Delete the auth user (this will cascade to the profile)
+      const { error } = await supabase.auth.admin.deleteUser(userId);
 
       if (error) throw error;
 
       toast({
-        title: "User removed",
-        description: "User has been removed from the company.",
+        title: "User deleted",
+        description: "User has been deleted successfully.",
       });
 
       fetchCompanyAndUsers();
@@ -265,6 +308,7 @@ const Company = () => {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'destructive';
       case 'admin': return 'destructive';
       case 'manager': return 'default';
       case 'staff': return 'secondary';
@@ -274,6 +318,7 @@ const Company = () => {
 
   const getRoleDescription = (role: string) => {
     switch (role) {
+      case 'superadmin': return 'System-wide access to all companies and data';
       case 'admin': return 'Full access to all company data and settings';
       case 'manager': return 'Can manage events and view all company data';
       case 'staff': return 'Can only manage their own events';
@@ -373,45 +418,46 @@ const Company = () => {
                     Manage your team members and their permissions
                   </CardDescription>
                 </div>
-                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
                   <DialogTrigger asChild>
-                    <Button>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Invite User
+                    <Button onClick={openCreateUserDialog}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add User
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Invite Team Member</DialogTitle>
+                      <DialogTitle>{editingUser ? 'Edit User' : 'Create New User'}</DialogTitle>
                       <DialogDescription>
-                        Add a new team member to your company
+                        {editingUser ? 'Update user information' : 'Add a new team member to your company'}
                       </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleInviteUser} className="space-y-4">
+                    <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="inviteEmail">Email Address</Label>
+                        <Label htmlFor="userEmail">Email Address</Label>
                         <Input
-                          id="inviteEmail"
+                          id="userEmail"
                           type="email"
-                          value={inviteFormData.email}
-                          onChange={(e) => setInviteFormData({ ...inviteFormData, email: e.target.value })}
+                          value={userFormData.email}
+                          onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
                           placeholder="user@example.com"
+                          disabled={editingUser !== null}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="inviteName">Full Name</Label>
+                        <Label htmlFor="userName">Full Name</Label>
                         <Input
-                          id="inviteName"
-                          value={inviteFormData.full_name}
-                          onChange={(e) => setInviteFormData({ ...inviteFormData, full_name: e.target.value })}
+                          id="userName"
+                          value={userFormData.full_name}
+                          onChange={(e) => setUserFormData({ ...userFormData, full_name: e.target.value })}
                           placeholder="John Doe"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="inviteRole">Role</Label>
-                        <Select value={inviteFormData.role} onValueChange={(value: any) => setInviteFormData({ ...inviteFormData, role: value })}>
+                        <Label htmlFor="userRole">Role</Label>
+                        <Select value={userFormData.role} onValueChange={(value: any) => setUserFormData({ ...userFormData, role: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -438,8 +484,17 @@ const Company = () => {
                         </Select>
                       </div>
                       <Button type="submit" className="w-full">
-                        <Mail className="mr-2 h-4 w-4" />
-                        Send Invitation
+                        {editingUser ? (
+                          <>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Update User
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create User
+                          </>
+                        )}
                       </Button>
                     </form>
                   </DialogContent>
@@ -454,9 +509,9 @@ const Company = () => {
                   <p className="text-muted-foreground mb-4">
                     Invite your first team member to get started
                   </p>
-                  <Button onClick={() => setShowInviteDialog(true)}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Invite User
+                  <Button onClick={openCreateUserDialog}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add User
                   </Button>
                 </div>
               ) : (
@@ -510,7 +565,7 @@ const Company = () => {
                               <Button 
                                 size="sm" 
                                 variant="destructive" 
-                                onClick={() => handleRemoveUser(member.id)}
+                                onClick={() => handleDeleteUser(member.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
