@@ -49,7 +49,7 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-gradient-primary text-primary-foreground font-semibold shadow-md border-r-4 border-accent" 
-      : "hover:bg-primary/5 hover:text-primary hover:shadow-sm transition-all duration-200";
+      : "text-sidebar-foreground hover:bg-primary/5 hover:text-primary hover:shadow-sm transition-all duration-200";
 
   return (
     <Sidebar className="border-r border-border/50 bg-gradient-subtle">

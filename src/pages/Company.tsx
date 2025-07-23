@@ -45,6 +45,7 @@ const Company = () => {
     full_name: '',
     role: 'staff' as 'admin' | 'manager' | 'staff' | 'superadmin'
   });
+  const [userRole, setUserRole] = useState<'admin' | 'manager' | 'staff' | 'superadmin' | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -59,6 +60,10 @@ const Company = () => {
         .select('company_id, role')
         .eq('id', user?.id)
         .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+      }
 
       if (profile?.company_id) {
         // Fetch company info
@@ -152,7 +157,7 @@ const Company = () => {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!company) return;
+    if (!company || !canManageUsers()) return;
 
     try {
       // Check if user already exists
@@ -211,7 +216,7 @@ const Company = () => {
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingUser) return;
+    if (!editingUser || !canManageUsers()) return;
 
     try {
       const { error } = await supabase
@@ -259,6 +264,8 @@ const Company = () => {
   };
 
   const handleUpdateUserRole = async (userId: string, newRole: 'admin' | 'manager' | 'staff' | 'superadmin') => {
+    if (!canManageUsers()) return;
+    
     try {
       const { error } = await supabase
         .from('profiles')
@@ -283,7 +290,7 @@ const Company = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    if (!canManageUsers() || !confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
       // Delete the auth user (this will cascade to the profile)
@@ -326,6 +333,15 @@ const Company = () => {
     }
   };
 
+  // Permission helper functions
+  const canManageUsers = () => {
+    return userRole === 'admin' || userRole === 'superadmin';
+  };
+
+  const canManageCompany = () => {
+    return userRole === 'admin' || userRole === 'manager' || userRole === 'superadmin';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -364,43 +380,48 @@ const Company = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSaveCompany} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Company Name</Label>
-                    <Input
-                      id="name"
-                      value={companyFormData.name}
-                      onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
-                      placeholder="Enter company name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={companyFormData.email}
-                      onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
-                      placeholder="company@example.com"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={companyFormData.phone}
-                    onChange={(e) => setCompanyFormData({ ...companyFormData, phone: e.target.value })}
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
-                <Button type="submit" disabled={saving}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save Company'}
-                </Button>
-              </form>
+      <form onSubmit={handleSaveCompany} className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="name">Company Name</Label>
+            <Input
+              id="name"
+              value={companyFormData.name}
+              onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
+              placeholder="Enter company name"
+              disabled={!canManageCompany()}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={companyFormData.email}
+              onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+              placeholder="company@example.com"
+              disabled={!canManageCompany()}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            value={companyFormData.phone}
+            onChange={(e) => setCompanyFormData({ ...companyFormData, phone: e.target.value })}
+            placeholder="+1 (555) 000-0000"
+            disabled={!canManageCompany()}
+          />
+        </div>
+        {canManageCompany() && (
+          <Button type="submit" disabled={saving}>
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? 'Saving...' : 'Save Company'}
+          </Button>
+        )}
+      </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -418,13 +439,14 @@ const Company = () => {
                     Manage your team members and their permissions
                   </CardDescription>
                 </div>
-                <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-                  <DialogTrigger asChild>
-                    <Button onClick={openCreateUserDialog}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add User
-                    </Button>
-                  </DialogTrigger>
+                {canManageUsers() && (
+                  <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+                    <DialogTrigger asChild>
+                      <Button onClick={openCreateUserDialog}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add User
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>{editingUser ? 'Edit User' : 'Create New User'}</DialogTitle>
@@ -499,6 +521,7 @@ const Company = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -509,10 +532,12 @@ const Company = () => {
                   <p className="text-muted-foreground mb-4">
                     Invite your first team member to get started
                   </p>
-                  <Button onClick={openCreateUserDialog}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add User
-                  </Button>
+                  {canManageUsers() && (
+                    <Button onClick={openCreateUserDialog}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add User
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <Table>
@@ -548,20 +573,26 @@ const Company = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
-                            <Select
-                              value={member.role}
-                              onValueChange={(newRole: any) => handleUpdateUserRole(member.id, newRole)}
-                            >
-                              <SelectTrigger className="w-24 h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="manager">Manager</SelectItem>
-                                <SelectItem value="staff">Staff</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {member.id !== user?.id && (
+                            {canManageUsers() ? (
+                              <Select
+                                value={member.role}
+                                onValueChange={(newRole: any) => handleUpdateUserRole(member.id, newRole)}
+                              >
+                                <SelectTrigger className="w-24 h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="manager">Manager</SelectItem>
+                                  <SelectItem value="staff">Staff</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge variant={getRoleBadgeVariant(member.role)}>
+                                {member.role}
+                              </Badge>
+                            )}
+                            {canManageUsers() && member.id !== user?.id && (
                               <Button 
                                 size="sm" 
                                 variant="destructive" 
@@ -597,9 +628,9 @@ const Company = () => {
                 <Badge variant="destructive">Admin</Badge>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Full company management</li>
-                <li>• Invite and manage users</li>
-                <li>• View all events and data</li>
+                <li>• CRUD company and all events</li>
+                <li>• Add users to specific companies</li>
+                <li>• Full access to all company data</li>
                 <li>• Modify company settings</li>
               </ul>
             </div>
@@ -608,10 +639,10 @@ const Company = () => {
                 <Badge variant="default">Manager</Badge>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Create and manage all events</li>
+                <li>• CRUD their own company/events</li>
                 <li>• View all company data</li>
                 <li>• Manage attendees and seating</li>
-                <li>• Cannot modify company settings</li>
+                <li>• Can modify company settings</li>
               </ul>
             </div>
             <div className="space-y-2">
@@ -619,8 +650,8 @@ const Company = () => {
                 <Badge variant="secondary">Staff</Badge>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Create their own events only</li>
-                <li>• Manage own event attendees</li>
+                <li>• Create, read, update their own events</li>
+                <li>• Manage own event attendees only</li>
                 <li>• Limited to personal event data</li>
                 <li>• Cannot view other users' events</li>
               </ul>
